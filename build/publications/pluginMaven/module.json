@@ -1,0 +1,83 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "pro.sgaz.scalingua",
+    "module": "gradle-plugin-scalingua",
+    "version": "1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "7.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "gradle-plugin-scalingua-1.0.jar",
+          "url": "gradle-plugin-scalingua-1.0.jar",
+          "size": 54532,
+          "sha512": "3dcd3e0c29f57844f0dd62cb2aa5d0c7a84567d76f4bd868e0144c4a75740b2ef837a8af3829d1ac0d5b96eee0ba5de3abd59215919f128f17833237038bcb99",
+          "sha256": "e5f37b76d6def7d7db91210a62f56e5a533fb0fc355160705b6085059d9fe57d",
+          "sha1": "4e3d9d51f91466302f306129cef695ccf4682829",
+          "md5": "d7db1556558c4a5fbb4945251cae4235"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 11,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "ru.makkarpov",
+          "module": "scalingua_2.12",
+          "version": {
+            "requires": "1.0"
+          }
+        },
+        {
+          "group": "org.scala-lang",
+          "module": "scala-compiler",
+          "version": {
+            "requires": "2.12.4"
+          }
+        },
+        {
+          "group": "org.scala-lang",
+          "module": "scala-library",
+          "version": {
+            "requires": "2.12.4"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "gradle-plugin-scalingua-1.0.jar",
+          "url": "gradle-plugin-scalingua-1.0.jar",
+          "size": 54532,
+          "sha512": "3dcd3e0c29f57844f0dd62cb2aa5d0c7a84567d76f4bd868e0144c4a75740b2ef837a8af3829d1ac0d5b96eee0ba5de3abd59215919f128f17833237038bcb99",
+          "sha256": "e5f37b76d6def7d7db91210a62f56e5a533fb0fc355160705b6085059d9fe57d",
+          "sha1": "4e3d9d51f91466302f306129cef695ccf4682829",
+          "md5": "d7db1556558c4a5fbb4945251cae4235"
+        }
+      ]
+    }
+  ]
+}

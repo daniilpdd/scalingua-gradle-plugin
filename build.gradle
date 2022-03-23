@@ -1,0 +1,33 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'scala'
+    id 'groovy'
+    id 'maven-publish'
+}
+
+group 'pro.sgaz.scalingua'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+gradlePlugin {
+    plugins {
+        scalingua {
+            id = 'pro.sgaz.scalingua'
+            implementationClass = 'pro.sgaz.scalingua.ScalinguaPlugin'
+        }
+    }
+}
+
+dependencies {
+    implementation group: 'ru.makkarpov', name: 'scalingua_2.12', version: '1.0'
+    implementation group: 'org.scala-lang', name: 'scala-compiler', version: '2.12.4'
+    implementation group: 'org.scala-lang', name: 'scala-library', version: '2.12.4'
+    implementation gradleApi()
+}
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
