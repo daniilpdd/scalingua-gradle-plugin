@@ -38,15 +38,6 @@ case class PackageLocalesSettings(target: File, localePackage: String, sources: 
 class ScalinguaPlugin extends Plugin[Project] {
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  private def longestCommonPrefix(s: Seq[File]): String = s match {
-    case head +: tail =>
-      var current = head.getCanonicalPath
-      for (f <- tail)
-        current = current.zip(f.getCanonicalPath).takeWhile { case (a, b) => a == b }.map(_._1).mkString
-      current
-    case _ => ""
-  }
-
   private def createParent(f: File): Unit = {
     val par = f.getParentFile
     if ((par ne null) && !par.isDirectory)
