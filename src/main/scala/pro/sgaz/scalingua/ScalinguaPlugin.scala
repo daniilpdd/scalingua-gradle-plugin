@@ -1,30 +1,39 @@
 package pro.sgaz.scalingua
 
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.scala.ScalaCompile
 import org.gradle.api.{Plugin, Project, Task}
 import org.slf4j.{Logger, LoggerFactory}
 import ru.makkarpov.scalingua.{LanguageId, StringUtils}
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import scala.collection.JavaConverters.{asScalaBufferConverter, seqAsJavaListConverter}
 
 trait ScalinguaSettingsExtension {
   def getLocalePackage: Property[String]
   def getCompileLocalesStrategy: Property[String]
+  def getTaggetFile: Property[String]
+  def getSrcPackage: Property[String]
 }
 
 case class ProjectSettings(
                             compileLocalesSettings: CompileLocalesSettings,
                             packageLocalesSettings: PackageLocalesSettings,
-                            compileLocalesStrategy: String)
+                            compileLocalesStrategy: String,
+                            templateTarget: String,
+                            srcName: String
+                          )
 
 sealed trait TaskSettings {
   val target: File
   val localePackage: String
   val sources: Seq[File]
+  val taggetFile: Option[File]
 }
-case class CompileLocalesSettings(target: File, localePackage: String, sources: Seq[File]) extends TaskSettings
-case class PackageLocalesSettings(target: File, localePackage: String, sources: Seq[File]) extends TaskSettings
+
+case class CompileLocalesSettings(target: File, localePackage: String, sources: Seq[File], taggetFile: Option[File]) extends TaskSettings
+
+case class PackageLocalesSettings(target: File, localePackage: String, sources: Seq[File], taggetFile: Option[File]) extends TaskSettings
 
 class ScalinguaPlugin extends Plugin[Project] {
   private val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -95,14 +104,13 @@ class ScalinguaPlugin extends Plugin[Project] {
   }
 
   private def withGenContext(task: TaskSettings, langFormat: String, tagFormat: String)
-                    (perLang: GenerationContext => Unit, englishTags: GenerationContext => Unit): Seq[File] = {
+                            (perLang: GenerationContext => Unit, englishTags: GenerationContext => Unit): Seq[File] = {
     val baseTgt = task.target
     val pkg = task.localePackage
     val implicitCtx = None
-//      if ((includeImplicitContext in task).value) (implicitContext in task).value.filter(_.nonEmpty)
-//      else None
-    val hasTags = false
-//      (taggedFile in task).value.isDefined
+    //      if ((includeImplicitContext in task).value) (implicitContext in task).value.filter(_.nonEmpty)
+    //      else None
+    val hasTags = task.taggetFile.isDefined
 
     val langPattern = "^([a-z]{2})_([A-Z]{2})\\.po$".r
     val ret = Seq.newBuilder[File]
@@ -127,13 +135,13 @@ class ScalinguaPlugin extends Plugin[Project] {
         throw new IllegalArgumentException(s"Illegal file name '${src.getName}', should be formatted like 'en_US.po' (${src.getCanonicalPath})")
     }
 
-//    for (t <- (taggedFile in task).value) {
-//      val tgt = filePkg(baseTgt, pkg) / tagFormat
-//
-//      val genCtx = GenerationContext(pkg, implicitCtx, LanguageId("xx", "XX"), hasTags, t, tgt, logger)
-//      englishTags(genCtx)
-//      ret += tgt
-//    }
+    for (t <- task.taggetFile) {
+      val tgt = filePkg(baseTgt, pkg) / tagFormat
+
+      val genCtx = GenerationContext(pkg, implicitCtx, LanguageId("xx", "XX"), hasTags, t, tgt, logger)
+      englishTags(genCtx)
+      ret += tgt
+    }
 
     ret.result()
   }
@@ -160,38 +168,55 @@ class ScalinguaPlugin extends Plugin[Project] {
     val extension: ScalinguaSettingsExtension =
       project.getExtensions.create[ScalinguaSettingsExtension]("scalingua", classOf[ScalinguaSettingsExtension])
 
-    val srcName = "main"
-//    val templateTarget = project.getBuildDir / "messages" / srcName + ".pot"
+    val srcName = extension.getSrcPackage.getOrElse("main")
+    val templateTarget = project.getBuildDir / "messages" / srcName + ".pot"
     val localePackage = extension.getLocalePackage.getOrElse("locales")
     val compileLocalesStrategy = extension.getCompileLocalesStrategy.getOrElse("ReadFromResources")
-//    val implicitContext = None
-//    val includeImplicitContext = true
-//    val taggedFile = None
+    //    val implicitContext = None
+    //    val includeImplicitContext = true
+    val taggedFile = Option(extension.getTaggetFile.getOrNull()).map(new File(_))
 
     val poFileExtension = ".po"
-    val sourceDirectoryCompile = project.getProjectDir / "src" / "main" / "locales"
+    val sourceDirectoryCompile = project.getProjectDir / "src" / srcName / "locales"
 
     val compileLocalesSources: Seq[File] = getFileTree(sourceDirectoryCompile).filter(p => p.getName.endsWith(poFileExtension))
 
     val targetCompile = project.getBuildDir / localePackage / srcName / "scala"
     val targetPackage = project.getBuildDir / localePackage / srcName / "resources"
 
-    val compileLocalesSettings = CompileLocalesSettings(targetCompile, localePackage, compileLocalesSources)
-    val packageLocalesSettings = PackageLocalesSettings(targetPackage, localePackage, compileLocalesSources)
+    val compileLocalesSettings = CompileLocalesSettings(targetCompile, localePackage, compileLocalesSources, taggedFile)
+    val packageLocalesSettings = PackageLocalesSettings(targetPackage, localePackage, compileLocalesSources, taggedFile)
 
-    ProjectSettings(compileLocalesSettings, packageLocalesSettings, compileLocalesStrategy)
+    ProjectSettings(compileLocalesSettings, packageLocalesSettings, compileLocalesStrategy, templateTarget, srcName)
   }
 
   override def apply(project: Project): Unit = {
 
     val settings: ProjectSettings = getSettings(project)
 
-    project.task("compileLocales").doLast{ _: Task =>
+    project.task("compileLocales").doLast { _: Task =>
       compileLocalesTask(settings)
     }
 
-    project.task("packageLocales").doLast{ _: Task =>
+    project.task("packageLocales").doLast { _: Task =>
       packageLocalesTask(settings)
     }
+
+    def appendScalaCompileOptions(options: String*): Unit = {
+      project.getTasks.withType(classOf[ScalaCompile], (t: ScalaCompile) => {
+        t.getScalaCompileOptions.setAdditionalParameters((
+          Option(t.getScalaCompileOptions.getAdditionalParameters.asScala).getOrElse(Nil) ++
+            options).asJava)
+      })
+    }
+
+    appendScalaCompileOptions(
+      s"-Xmacro-settings:scalingua:target=${project.getBuildDir.toString}/messages/${settings.srcName}.pot",
+      s"-Xmacro-settings:scalingua:baseDir=${project.getProjectDir.toString}",
+      "-Xmacro-settings:scalingua:escapeUnicode=true"
+    )
+
+    settings.compileLocalesSettings.taggetFile.foreach(tf =>
+      appendScalaCompileOptions("-Xmacro-settings:scalingua:taggedFile=" + tf.getCanonicalPath))
   }
 }
