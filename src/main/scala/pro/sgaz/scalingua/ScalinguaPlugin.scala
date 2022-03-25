@@ -27,7 +27,7 @@ case class CompileLocalesSettings(target: File, localePackage: String, sources: 
 case class PackageLocalesSettings(target: File, localePackage: String, sources: Seq[File]) extends TaskSettings
 
 class ScalinguaPlugin extends Plugin[Project] {
-  val logger: Logger = LoggerFactory.getLogger(getClass)
+  private val logger: Logger = LoggerFactory.getLogger(getClass)
 
   private def longestCommonPrefix(s: Seq[File]): String = s match {
     case head +: tail =>
@@ -48,7 +48,7 @@ class ScalinguaPlugin extends Plugin[Project] {
     if (s.isEmpty) f
     else f / s.replace('.', '/')
 
-  def collectLangs(task: TaskSettings): Seq[LanguageId] = {
+  private def collectLangs(task: TaskSettings): Seq[LanguageId] = {
     val langPattern = "^([a-z]{2})_([A-Z]{2})\\.po$".r
     val ret = Seq.newBuilder[LanguageId]
 
@@ -63,7 +63,7 @@ class ScalinguaPlugin extends Plugin[Project] {
     ret.result()
   }
 
-  def compileLocalesTask(projectSettings: ProjectSettings): Seq[File] = {
+  private def compileLocalesTask(projectSettings: ProjectSettings): Seq[File] = {
     val strategy = PoCompilerStrategy.getStrategy(projectSettings.compileLocalesStrategy)
 
     val doCompiling: GenerationContext => Unit = PoCompiler.doCompiling(strategy)
@@ -94,7 +94,7 @@ class ScalinguaPlugin extends Plugin[Project] {
       r
   }
 
-  def withGenContext(task: TaskSettings, langFormat: String, tagFormat: String)
+  private def withGenContext(task: TaskSettings, langFormat: String, tagFormat: String)
                     (perLang: GenerationContext => Unit, englishTags: GenerationContext => Unit): Seq[File] = {
     val baseTgt = task.target
     val pkg = task.localePackage
@@ -138,7 +138,7 @@ class ScalinguaPlugin extends Plugin[Project] {
     ret.result()
   }
 
-  def packageLocalesTask(projectSettings: ProjectSettings): Seq[File] = {
+  private def packageLocalesTask(projectSettings: ProjectSettings): Seq[File] = {
     val strategy = PoCompilerStrategy.getStrategy(projectSettings.compileLocalesStrategy)
 
     if (strategy.isPackagingNecessary)
@@ -152,11 +152,11 @@ class ScalinguaPlugin extends Plugin[Project] {
       Seq.empty[File]
   }
 
-  def getFileTree(f: File): Stream[File] =
+  private def getFileTree(f: File): Stream[File] =
     f #:: (if (f.isDirectory) f.listFiles().toStream.flatMap(getFileTree)
     else Stream.empty)
 
-  def getSettings(project: Project): ProjectSettings = {
+  private def getSettings(project: Project): ProjectSettings = {
     val extension: ScalinguaSettingsExtension =
       project.getExtensions.create[ScalinguaSettingsExtension]("scalingua", classOf[ScalinguaSettingsExtension])
 
