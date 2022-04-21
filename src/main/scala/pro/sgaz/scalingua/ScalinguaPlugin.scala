@@ -168,7 +168,7 @@ class ScalinguaPlugin extends Plugin[Project] {
     val taggedFile = Option(extension.getTaggetFile.getOrNull()).map(new File(_))
 
     val poFileExtension = ".po"
-    val sourceDirectoryCompile = project.getProjectDir / "src" / srcName / "locales"
+    val sourceDirectoryCompile = project.getProjectDir / "src" / srcName / localePackage
 
     val compileLocalesSources: Seq[File] = getFileTree(sourceDirectoryCompile).filter(p => p.getName.endsWith(poFileExtension))
 
